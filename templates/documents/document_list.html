@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{% if folder_label %}{{ folder_label }}{% else %}Search records{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  {% if folder_label %}
+  <div>
+    <div class="eyebrow">Folder</div>
+    <h1>{{ folder_label }}{% if folder_year %} <span class="head-year">s. {{ folder_year }}</span>{% endif %}</h1>
+    {% if folder_year %}
+    <a class="head-clear" href="{% url 'documents:document_folder' folder_code %}">
+      <svg class="icon icon-sm"><use href="#icon-x"/></svg>Show every series year
+    </a>
+    {% endif %}
+  </div>
+  {% else %}
+  <div><div class="eyebrow">Registry</div><h1>Search records</h1></div>
+  {% endif %}
+  {% if user.is_archive_admin %}
+  <div class="btn-row">
+    <a class="btn btn--quiet" href="{% url 'documents:export_csv' %}?{{ querystring }}"><svg class="icon"><use href="#icon-download"/></svg>Export these results</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if not folder_label %}
+<form method="get" class="search-panel">
+  <div class="search-bar">
+    <div class="field suggest-wrap">
+      {{ form.q }}
+      <div class="suggest-dropdown" id="q-suggest"></div>
+    </div>
+    <button class="btn" type="submit"><svg class="icon"><use href="#icon-search"/></svg>Search</button>
+  </div>
+
+  <details class="more-filters">
+    <summary>
+      <svg class="icon"><use href="#icon-chevron-down"/></svg>
+      <span class="more-filters-show">More filters</span>
+      <span class="more-filters-hide">Fewer filters</span>
+    </summary>
+    <div class="row row--wide" style="margin-top:.9rem">
+      <div class="field">{{ form.doc_type.label_tag }}{{ form.doc_type }}</div>
+      <div class="field">{{ form.status.label_tag }}{{ form.status }}</div>
+      <div class="field">{{ form.office.label_tag }}{{ form.office }}</div>
+    </div>
+    <div class="row">
+      <div class="field">{{ form.number.label_tag }}{{ form.number }}</div>
+      <div class="field">{{ form.series_year.label_tag }}{{ form.series_year }}</div>
+      <div class="field">{{ form.date_from.label_tag }}{{ form.date_from }}</div>
+      <div class="field">{{ form.date_to.label_tag }}{{ form.date_to }}</div>
+    </div>
+    <div class="btn-row" style="margin-top:.2rem">
+      <button class="btn" type="submit"><svg class="icon"><use href="#icon-search"/></svg>Search</button>
+      <a class="btn btn--quiet" href="{% url 'documents:document_list' %}">Clear</a>
+    </div>
+  </details>
+  {% if form.errors %}<ul class="errorlist">{% for field, errors in form.errors.items %}{% for e in errors %}<li>{{ e }}</li>{% endfor %}{% endfor %}</ul>{% endif %}
+</form>
+{% endif %}
+
+{% if series_folders %}
+<section class="subfolders tone-{{ folder_tone }}">
+  <div class="subfolders-head">
+    <span class="eyebrow">{% if folder_year %}Sub-folders by series year{% else %}Open a series year{% endif %}</span>
+    {% if folder_year %}
+    <a class="head-clear" href="{% url 'documents:document_folder' folder_code %}">
+      <svg class="icon icon-sm"><use href="#icon-x"/></svg>Show the whole folder
+    </a>
+    {% endif %}
+  </div>
+  <div class="subfolder-grid">
+    {% for s in series_folders %}
+    <a class="subfolder{% if folder_year == s.year %} is-open{% endif %}"
+       href="{% url 'documents:document_folder' folder_code %}?year={{ s.year }}"
+       {% if folder_year == s.year %}aria-current="page"{% endif %}>
+      <span class="subfolder-icon"><svg class="icon"><use href="#icon-folders"/></svg></span>
+      <span class="subfolder-name">s. {{ s.year }}</span>
+      <span class="subfolder-count">{{ s.total }} record{{ s.total|pluralize }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if folder_label and not folder_year and series_folders %}
+<p class="helptext subfolders-hint">
+  {{ folder_total }} record{{ folder_total|pluralize }} in this folder. Open a series year to see them.
+</p>
+{% else %}
+
+<p class="eyebrow">
+  {% if folder_year %}s. {{ folder_year }} &middot; {% endif %}{{ page_obj.paginator.count }}
+  {% if folder_label %}record{{ page_obj.paginator.count|pluralize }}{% else %}result{{ page_obj.paginator.count|pluralize }}{% endif %}
+</p>
+
+<table class="registry">
+  <thead>
+    <tr><th>Control number</th><th>Subject</th><th>Issued</th><th>Office</th><th>Status</th><th>File</th></tr>
+  </thead>
+  <tbody>
+  {% for doc in documents %}
+    {# Inside a folder, clicking anywhere on the row opens the uploaded file; a record with no file opens its page. #}
+    {% if folder_code %}
+    <tr class="row-link" data-href="{% if doc.file %}{% url 'documents:document_viewer' doc.pk %}{% else %}{{ doc.get_absolute_url }}{% endif %}">
+    {% else %}
+    <tr>
+    {% endif %}
+      <td class="ctrl"><span class="chip chip--series tone-{{ doc.tone }}">{{ doc.control_number }}</span></td>
+      <td class="subject"><a href="{% if folder_code and doc.file %}{% url 'documents:document_viewer' doc.pk %}{% else %}{{ doc.get_absolute_url }}{% endif %}">{{ doc.subject }}</a>
+        {% if doc.keyword_list %}<div class="helptext">{{ doc.keywords }}</div>{% endif %}</td>
+      <td class="ctrl">{{ doc.date_issued|date:"d M Y" }}</td>
+      <td>{{ doc.originating_office|default:"—" }}</td>
+      <td>
+        {% if doc.status == 'ACTIVE' %}<span class="chip chip--ok">{{ doc.get_status_display }}</span>
+        {% elif doc.status == 'REVOKED' %}<span class="chip chip--stop">{{ doc.get_status_display }}</span>
+        {% else %}<span class="chip chip--warn">{{ doc.get_status_display }}</span>{% endif %}
+      </td>
+      <td>{% if doc.file %}<a href="{% url 'documents:document_download' doc.pk %}" class="ctrl">{{ doc.file_extension }}</a>{% else %}<span class="helptext">none</span>{% endif %}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6" class="empty">
+      {% if folder_label %}
+      <h3>No {{ folder_label|lower }} records yet</h3>
+      <p>Documents filed under this type will appear here.</p>
+      {% else %}
+      <h3>Nothing matches those filters</h3>
+      <p>Try a shorter keyword, or clear the filters and browse the whole registry.</p>
+      <a class="btn btn--quiet" href="{% url 'documents:document_list' %}">Clear filters</a>
+      {% endif %}
+    </td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% if folder_code %}
+<script>
+  document.querySelectorAll("tr.row-link").forEach(function (row) {
+    row.addEventListener("click", function (event) {
+      if (event.target.closest("a, button")) return;  // links in the row handle themselves
+      window.location = row.dataset.href;
+    });
+  });
+</script>
+{% endif %}
+
+{% if is_paginated %}
+<div class="pager">
+  {% if page_obj.has_previous %}<a href="?{{ querystring }}&page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+  <span class="ctrl">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}<a href="?{{ querystring }}&page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
+{% block extra_scripts %}{% if not folder_label %}
+<script>window.SUGGEST_URL = "{% url 'documents:document_suggest' %}";</script>
+<script src="{% static 'js/search-suggest.js' %}?v={{ asset_version }}" defer></script>
+{% endif %}{% endblock %}

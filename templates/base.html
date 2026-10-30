@@ -1,0 +1,145 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Municipality of Carigara{% endblock %}</title>
+<link rel="icon" type="image/png" href="{% static 'images/carigara-seal.png' %}">
+<link rel="apple-touch-icon" href="{% static 'images/carigara-seal.png' %}">
+<script>
+  // The menu starts hidden every time the system is opened. Opening it is
+  // remembered for this visit only (sessionStorage), so moving between pages
+  // keeps it open, but the next time the system is opened it is clean again.
+  try {
+    if (sessionStorage.getItem("sidebar") !== "open") {
+      document.documentElement.classList.add("sidebar-collapsed");
+    }
+  } catch (e) {
+    document.documentElement.classList.add("sidebar-collapsed");
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/app.css' %}?v={{ asset_version }}">
+</head>
+<body>
+{% include "_icons.html" %}
+<div class="shell">
+  <aside class="sidebar">
+    <button type="button" class="sidebar-toggle" aria-label="Hide the menu" aria-expanded="true" title="Hide the menu">
+      <svg class="icon icon-panel-close"><use href="#icon-panel-close"/></svg>
+      <svg class="icon icon-panel-open"><use href="#icon-panel-open"/></svg>
+    </button>
+    <div class="mark">
+      <img class="mark-seal" src="{% static 'images/carigara-seal.png' %}" alt="Municipality of Carigara seal">
+      <div>Municipality of Carigara<span>Record Keeper</span></div>
+    </div>
+
+    <nav>
+      <a href="{% url 'documents:dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>
+        <span class="navlabel"><svg class="icon"><use href="#icon-layout-dashboard"/></svg>Overview</span>
+      </a>
+      <a href="{% url 'documents:document_list' %}" {% if request.resolver_match.url_name == 'document_list' %}class="active"{% endif %}>
+        <span class="navlabel"><svg class="icon"><use href="#icon-search"/></svg>Search records</span>
+      </a>
+
+      {% if user.can_view_accounts %}
+      <div class="group-label">Administration</div>
+      <a href="{% url 'accounts:user_list' %}" {% if 'user' in request.resolver_match.url_name %}class="active"{% endif %}>
+        <span class="navlabel"><svg class="icon"><use href="#icon-users"/></svg>Accounts</span>
+      </a>
+      {% if user.is_super_admin %}
+      <a href="{% url 'accounts:account_requests' %}" {% if 'request' in request.resolver_match.url_name %}class="active"{% endif %}>
+        <span class="navlabel"><svg class="icon"><use href="#icon-inbox"/></svg>Account requests</span>
+        {% if pending_account_requests %}<span class="nav-count">{{ pending_account_requests }}</span>{% endif %}
+      </a>
+      {% endif %}
+      {% endif %}
+
+      {% if user.is_archive_admin and not user.is_super_admin %}
+      <a href="{% url 'documents:document_create' %}" {% if request.resolver_match.url_name == 'document_create' %}class="active"{% endif %}>
+        <span class="navlabel"><svg class="icon"><use href="#icon-plus"/></svg>File a document</span>
+      </a>
+      <a href="{% url 'documents:folder_list' %}" {% if 'folder' in request.resolver_match.url_name %}class="active"{% endif %}>
+        <span class="navlabel"><svg class="icon"><use href="#icon-folders"/></svg>Folders</span>
+      </a>
+      <a href="{% url 'documents:recycle_bin' %}" {% if request.resolver_match.url_name == 'recycle_bin' %}class="active"{% endif %}>
+        <span class="navlabel"><svg class="icon"><use href="#icon-archive"/></svg>Recycle Bin</span>
+      </a>
+      {% endif %}
+
+      {% if user.is_super_admin %}
+      <a href="{% url 'documents:audit_trail' %}" {% if request.resolver_match.url_name == 'audit_trail' %}class="active"{% endif %}>
+        <span class="navlabel"><svg class="icon"><use href="#icon-chart-bar"/></svg>Audit trail</span>
+      </a>
+      {% endif %}
+    </nav>
+
+
+  </aside>
+
+  <main class="main">
+    {% if user.is_authenticated %}
+    <div class="topbar">
+      <div class="user-menu">
+        <button type="button" class="user-menu-btn" aria-haspopup="true" aria-expanded="false">
+          {% if user.avatar_url %}
+            <img class="avatar avatar-sm" src="{{ user.avatar_url }}" alt="">
+          {% else %}
+            <div class="avatar avatar-placeholder avatar-sm">{{ user.initials }}</div>
+          {% endif %}
+          <span class="user-menu-name">
+            <strong>{{ user.get_full_name|default:user.username }}</strong>
+            <span class="role">{{ user.role_label }}</span>
+          </span>
+          <svg class="icon icon-sm"><use href="#icon-chevron-down"/></svg>
+        </button>
+        <div class="user-dropdown">
+          <a class="user-dropdown-link" href="{% url 'accounts:profile' %}"><svg class="icon icon-sm"><use href="#icon-circle-user"/></svg>Profile</a>
+          <a class="user-dropdown-link" href="{% url 'accounts:password_change' %}"><svg class="icon icon-sm"><use href="#icon-lock"/></svg>Password</a>
+          <form method="post" action="{% url 'accounts:logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="user-dropdown-link user-dropdown-signout"><svg class="icon icon-sm"><use href="#icon-log-out"/></svg><span>Sign out</span></button>
+          </form>
+        </div>
+      </div>
+
+      <div class="notif-wrap">
+        <button type="button" class="bell-btn" id="notif-bell" aria-haspopup="true" aria-expanded="false" aria-label="Notifications">
+          <svg class="icon"><use href="#icon-bell"/></svg>
+          <span class="bell-badge" id="notif-badge" data-count="{{ unread_notification_count }}">{{ unread_notification_count }}</span>
+        </button>
+        <div class="notif-dropdown" id="notif-dropdown">
+          <div class="notif-head">
+            <strong>Notifications</strong>
+            <button type="button" id="notif-mark-all">Mark all read</button>
+          </div>
+          <div id="notif-items">
+            {% include "accounts/_notification_items.html" %}
+          </div>
+          <div class="notif-foot"><a href="{% url 'accounts:notification_list' %}">See all</a></div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<form method="post" action="{% url 'accounts:notifications_mark_all_read' %}" id="notif-mark-all-form" style="display:none">{% csrf_token %}</form>
+<script>
+  window.NOTIF_POLL_URL = "{% url 'accounts:notifications_poll' %}";
+</script>
+<script src="{% static 'js/notifications.js' %}?v={{ asset_version }}" defer></script>
+<script src="{% static 'js/password-toggle.js' %}?v={{ asset_version }}" defer></script>
+<script src="{% static 'js/loading.js' %}?v={{ asset_version }}" defer></script>
+<script src="{% static 'js/ph-contact.js' %}?v={{ asset_version }}" defer></script>
+<script src="{% static 'js/sidebar-toggle.js' %}?v={{ asset_version }}" defer></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

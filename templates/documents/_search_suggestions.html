@@ -1,0 +1,8 @@
+{% for doc in suggestions %}
+<a class="suggest-item" href="{{ doc.get_absolute_url }}">
+  <span class="ctrl">{{ doc.control_number }}</span>
+  <span class="subject">{{ doc.subject }}</span>
+</a>
+{% empty %}
+<div class="suggest-empty">No matches</div>
+{% endfor %}

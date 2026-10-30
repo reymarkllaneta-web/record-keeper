@@ -1,0 +1,48 @@
+# Render Blueprint: creates the web service and its PostgreSQL database together.
+# In Render: New > Blueprint > pick this repository.
+databases:
+  - name: record-keeper-db
+    plan: free
+    region: singapore
+    databaseName: docarchive_db
+    user: docarchive
+
+services:
+  - type: web
+    name: record-keeper
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: bash build.sh
+    startCommand: gunicorn config.wsgi:application --workers 1 --threads 4 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: DATABASE_URL
+        fromDatabase:
+          name: record-keeper-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      # Render asks for each of these when the Blueprint is created.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        sync: false
+      - key: BREVO_SENDER_NAME
+        value: Municipality of Carigara Document Archive
+      # First Super administrator, created on the first deploy only.
+      - key: SUPERADMIN_USERNAME
+        sync: false
+      - key: SUPERADMIN_EMAIL
+        sync: false
+      - key: SUPERADMIN_PASSWORD
+        sync: false
