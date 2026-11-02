@@ -3745,3 +3745,45 @@ dl.meta dd {
 tr.row-link {
     cursor: pointer;
 }
+
+/* Account requests: the role picker, Approve and Reject are stacked in their
+   column so they always fit inside the table instead of being cut off. */
+.table-scroll {
+    width: 100%;
+    overflow-x: auto;
+}
+
+table.registry td.request-actions {
+    width: 10rem;
+    min-width: 9.5rem;
+}
+
+/* On this page the date may wrap, so the action buttons keep their room. */
+.table-scroll table.registry td.request-date {
+    white-space: normal;
+    min-width: 6.5rem;
+}
+
+.approve-form,
+.reject-form {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    margin: 0;
+}
+
+.reject-form {
+    margin-top: .4rem;
+}
+
+.approve-form .approve-role {
+    width: 100%;
+    padding: .4rem .55rem;
+    font-size: .88rem;
+}
+
+td.request-actions .btn {
+    width: 100%;
+    justify-content: center;
+    white-space: nowrap;
+}
