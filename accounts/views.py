@@ -134,6 +134,7 @@ class UserListView(AccountViewerRequiredMixin, ListView):
 
 class UserCreateView(SuperAdminRequiredMixin, CreateView):
     model = User
+    context_object_name = "account"
     form_class = UserCreateForm
     template_name = "accounts/user_form.html"
     success_url = reverse_lazy("accounts:user_list")
@@ -151,6 +152,9 @@ class UserCreateView(SuperAdminRequiredMixin, CreateView):
 
 class UserUpdateView(SuperAdminRequiredMixin, UpdateView):
     model = User
+    # Not "user": that name belongs to whoever is signed in, and the menu and
+    # top bar read it. Using it here showed the edited account as the signed-in one.
+    context_object_name = "account"
     form_class = UserUpdateForm
     template_name = "accounts/user_form.html"
     success_url = reverse_lazy("accounts:user_list")
