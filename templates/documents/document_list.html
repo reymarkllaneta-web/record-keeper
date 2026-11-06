@@ -104,7 +104,8 @@
     {% if folder_code %}
     <tr class="row-link" data-href="{% if doc.file %}{% url 'documents:document_viewer' doc.pk %}{% else %}{{ doc.get_absolute_url }}{% endif %}">
     {% else %}
-    <tr>
+    {# On Search records, clicking anywhere on the row opens the record page. #}
+    <tr class="row-link" data-href="{{ doc.get_absolute_url }}">
     {% endif %}
       <td class="ctrl"><span class="chip chip--series tone-{{ doc.tone }}">{{ doc.control_number }}</span></td>
       <td class="subject"><a href="{% if folder_code and doc.file %}{% url 'documents:document_viewer' doc.pk %}{% else %}{{ doc.get_absolute_url }}{% endif %}">{{ doc.subject }}</a>
@@ -132,7 +133,6 @@
   {% endfor %}
   </tbody>
 </table>
-{% if folder_code %}
 <script>
   document.querySelectorAll("tr.row-link").forEach(function (row) {
     row.addEventListener("click", function (event) {
@@ -141,7 +141,6 @@
     });
   });
 </script>
-{% endif %}
 
 {% if is_paginated %}
 <div class="pager">
