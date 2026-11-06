@@ -40,6 +40,21 @@ class ControlNumberTests(ArchiveTestCase):
         self.assertEqual(c.number, 1)
         self.assertEqual(d.number, 1)
 
+    def test_a_zero_number_takes_the_next_number(self):
+        self.make()
+        doc = self.make(number=0)
+        self.assertEqual(doc.number, 2)
+
+    def test_the_filing_form_refuses_number_zero(self):
+        from .forms import DocumentForm
+        form = DocumentForm(data={
+            "doc_type": DocumentType.MEMORANDUM, "series_year": 2026, "number": 0,
+            "subject": "Zero", "date_issued": "2026-01-15",
+            "status": "ACTIVE", "classification": "INTERNAL",
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn("number", form.errors)
+
     def test_control_number_format(self):
         doc = self.make()
         self.assertEqual(doc.control_number, "MEMORANDUM No. 001, s. 2026")

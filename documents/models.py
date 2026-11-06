@@ -366,7 +366,7 @@ class Document(models.Model):
         return (last or 0) + 1
 
     def save(self, *args, **kwargs):
-        if self.number is None:
+        if not self.number:  # blank (or a stray 0) takes the next number in the series
             with transaction.atomic():
                 # Lock the series so two clerks saving at once can't take the
                 # same number.

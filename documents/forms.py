@@ -51,6 +51,15 @@ class DocumentForm(forms.ModelForm):
                 "Leave blank and the next number in this series is assigned on save."
             )
 
+    def clean_number(self):
+        number = self.cleaned_data.get("number")
+        # 0 used to slip through and showed as "No. —"; numbers start at 1.
+        if number == 0:
+            raise forms.ValidationError(
+                "Control numbers start at 1. Leave this blank and the next number is assigned."
+            )
+        return number
+
     def clean_series_year(self):
         year = self.cleaned_data["series_year"]
         if not (1900 <= year <= date.today().year + 1):
