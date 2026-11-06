@@ -63,10 +63,10 @@
   <thead><tr><th>Control number</th><th>Subject</th><th>Issued</th><th>Status</th></tr></thead>
   <tbody>
   {% for doc in latest_filed %}
-    {# Clicking anywhere on the row opens the uploaded file; a record with no file opens its page. #}
-    <tr class="row-link" data-href="{% if doc.file %}{% url 'documents:document_viewer' doc.pk %}{% else %}{{ doc.get_absolute_url }}{% endif %}">
+    {# Clicking anywhere on the row opens the record page (View, Edit, Remove). #}
+    <tr class="row-link" data-href="{{ doc.get_absolute_url }}">
       <td class="ctrl"><span class="chip chip--series tone-{{ doc.tone }}">{{ doc.control_number }}</span></td>
-      <td class="subject"><a href="{% if doc.file %}{% url 'documents:document_viewer' doc.pk %}{% else %}{{ doc.get_absolute_url }}{% endif %}">{{ doc.subject }}</a></td>
+      <td class="subject"><a href="{{ doc.get_absolute_url }}">{{ doc.subject }}</a></td>
       <td class="ctrl">{{ doc.date_issued|date:"d M Y" }}</td>
       <td>
         {% if doc.status == 'ACTIVE' %}<span class="chip chip--ok">{{ doc.get_status_display }}</span>
